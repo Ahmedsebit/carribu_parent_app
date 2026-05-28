@@ -1,0 +1,10 @@
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+const API_BASE = 'http://10.0.2.2:5000/api'; // ⚠️ Use 10.0.2.2 for Android emulator, LAN IP for physical device
+const api = axios.create({ baseURL: API_BASE, headers:{'Content-Type':'application/json'}, timeout:10000 });
+api.interceptors.request.use(async config => { const t = await AsyncStorage.getItem('token'); if(t) config.headers.Authorization = `Bearer ${t}`; return config; });
+export const authAPI = { login: d => api.post('/auth/login', d), changePassword: d => api.put('/auth/change-password', d), updateProfile: d => api.put('/auth/profile', d), getMe: () => api.get('/auth/me') };
+export const locationAPI = { getMyBus: () => api.get('/location/my-bus'), getBusLocation: id => api.get(`/location/bus/${id}`) };
+export const studentAPI = { getAll: () => api.get('/students') };
+export const messageAPI = { getConversations: () => api.get('/messages/conversations'), getThread: id => api.get(`/messages/thread/${id}`), send: d => api.post('/messages', d), getUnreadCount: () => api.get('/messages/unread-count'), reportAbsence: d => api.post('/messages/absence', d), getMyDrivers: () => api.get('/messages/my-drivers'), getNotifications: () => api.get('/messages/notifications') };
+export default api;
