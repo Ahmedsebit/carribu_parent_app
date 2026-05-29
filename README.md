@@ -157,8 +157,8 @@ This project uses [EAS Build](https://docs.expo.dev/build/introduction/) to crea
 # Log in to your Expo account
 npx eas-cli login
 
-# Connect project to Expo (if not already connected)
-npx eas-cli init
+# Connect project to Expo (already done — project ID: 5a7e2785-c184-4c0f-9647-7adaeac12da8)
+npx eas-cli init --id 5a7e2785-c184-4c0f-9647-7adaeac12da8
 ```
 
 ### Build commands
@@ -192,6 +192,17 @@ iOS builds require Apple Developer credentials. Run interactively:
 ```bash
 npx eas-cli build --platform ios --profile production
 ```
+
+## App Identifiers
+
+| Detail | Value |
+|--------|-------|
+| Android Package | `com.carribu.parent` |
+| iOS Bundle ID | `com.carribu.parent` |
+| Expo Owner | `firstbodis-organization` |
+| Expo Slug | `school-transport-parent` |
+| Expo Project ID | `5a7e2785-c184-4c0f-9647-7adaeac12da8` |
+| Expo Dashboard | [expo.dev/accounts/firstbodis-organization/projects/school-transport-parent](https://expo.dev/accounts/firstbodis-organization/projects/school-transport-parent) |
 
 ## Versioning
 
