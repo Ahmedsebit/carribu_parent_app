@@ -19,10 +19,20 @@
         "googleMaps": {
           "apiKey": ""
         }
-      }
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "plugins": [
       "expo-location"
-    ]
+    ],
+    "owner": "firstbodis-organization",
+    "extra": {
+      "eas": {
+        "projectId": "5a7e2785-c184-4c0f-9647-7adaeac12da8"
+      }
+    }
   }
 }
