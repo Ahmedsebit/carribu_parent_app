@@ -7,4 +7,5 @@ export const authAPI = { login: d => api.post('/auth/login', d), changePassword:
 export const locationAPI = { getMyBus: () => api.get('/location/my-bus'), getBusLocation: id => api.get(`/location/bus/${id}`) };
 export const studentAPI = { getAll: () => api.get('/students') };
 export const messageAPI = { getConversations: () => api.get('/messages/conversations'), getThread: id => api.get(`/messages/thread/${id}`), send: d => api.post('/messages', d), getUnreadCount: () => api.get('/messages/unread-count'), reportAbsence: d => api.post('/messages/absence', d), getMyDrivers: () => api.get('/messages/my-drivers'), getNotifications: () => api.get('/messages/notifications') };
+export const appVersionAPI = { getLatest: (appName) => api.get(`/app-versions/latest/${appName}`) };
 export default api;

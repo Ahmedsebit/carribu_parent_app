@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator, TextInput, ScrollView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, TextInput, ScrollView, Dimensions, Linking } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useAuth } from '../contexts/AuthContext';
-import { studentAPI, authAPI } from '../services/api';
+import { studentAPI, authAPI, appVersionAPI } from '../services/api';
 
+const APP_VERSION = '2.0.0';
 const { width } = Dimensions.get('window');
 
 const ProfileScreen = () => {
@@ -14,9 +15,12 @@ const ProfileScreen = () => {
   const [markerCoord,setMarkerCoord]=useState(user?.pickupLat ? {latitude:parseFloat(user.pickupLat),longitude:parseFloat(user.pickupLng)} : null);
   const [locLoading,setLocLoading]=useState(false); const [mapReady,setMapReady]=useState(false);
   const [scrollEnabled,setScrollEnabled]=useState(true);
+  const [latestVersion,setLatestVersion]=useState(null);
   const mapRef = useRef(null);
 
   useEffect(()=>{(async()=>{try{const{data}=await studentAPI.getAll();setChildren(data.students.filter(s=>s.parentId===user.id));}catch(e){}finally{setLoading(false);}})();},[user]);
+
+  useEffect(()=>{(async()=>{try{const{data}=await appVersionAPI.getLatest('parent');setLatestVersion(data);}catch(e){}})();},[]);
 
   const openLocationForm = async () => {
     setShowLocationForm(true);
@@ -147,7 +151,16 @@ const ProfileScreen = () => {
     </View>
 
     <TouchableOpacity style={{backgroundColor:'#dc2626',borderRadius:14,padding:16,alignItems:'center'}} onPress={()=>Alert.alert('Logout','Sure?',[{text:'Cancel',style:'cancel'},{text:'Logout',style:'destructive',onPress:logout}])}><Text style={{color:'#fff',fontSize:16,fontWeight:'600'}}>🚪 Logout</Text></TouchableOpacity>
-    <Text style={{textAlign:'center',color:'#9ca3af',marginTop:16,fontSize:12}}>SchoolTransport Parent v2.0.0</Text>
+
+    {/* App Version & Update */}
+    <View style={{marginTop:16,alignItems:'center'}}>
+      <Text style={{color:'#9ca3af',fontSize:12}}>SchoolTransport Parent v{APP_VERSION}</Text>
+      {latestVersion && latestVersion.version !== APP_VERSION && (
+        <TouchableOpacity onPress={()=>Linking.openURL(latestVersion.downloadUrl)} style={{marginTop:8,backgroundColor:'#16a34a',borderRadius:10,paddingHorizontal:16,paddingVertical:10}}>
+          <Text style={{color:'#fff',fontWeight:'600',fontSize:13}}>⬆️ Update Available: v{latestVersion.version}</Text>
+        </TouchableOpacity>
+      )}
+    </View>
   </ScrollView>;
 };
 export default ProfileScreen;
