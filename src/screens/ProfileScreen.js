@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Alert, ActivityIndicator, TextInput, ScrollView, Dimensions, Linking } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import Constants from 'expo-constants';
 import { useAuth } from '../contexts/AuthContext';
 import { studentAPI, authAPI, appVersionAPI } from '../services/api';
 
-const APP_VERSION = '2.0.0';
+const APP_VERSION = Constants.expoConfig?.version || '2.0.0';
 const { width } = Dimensions.get('window');
 
 const ProfileScreen = () => {

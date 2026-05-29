@@ -23,6 +23,7 @@
     "@react-navigation/native-stack": "^6.9.17",
     "axios": "^1.6.2",
     "expo": "~55.0.23",
+    "expo-constants": "~55.0.16",
     "expo-location": "~55.1.10",
     "expo-status-bar": "~55.0.6",
     "react": "19.2.0",
