@@ -1,6 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const API_BASE = 'http://10.0.2.2:5000/api'; // ⚠️ Use 10.0.2.2 for Android emulator, LAN IP for physical device
+import { API_BASE_URL } from '@env';
+const API_BASE = API_BASE_URL || 'http://10.0.2.2:5000/api';
 const api = axios.create({ baseURL: API_BASE, headers:{'Content-Type':'application/json'}, timeout:10000 });
 api.interceptors.request.use(async config => { const t = await AsyncStorage.getItem('token'); if(t) config.headers.Authorization = `Bearer ${t}`; return config; });
 export const authAPI = { login: d => api.post('/auth/login', d), changePassword: d => api.put('/auth/change-password', d), updateProfile: d => api.put('/auth/profile', d), getMe: () => api.get('/auth/me') };
