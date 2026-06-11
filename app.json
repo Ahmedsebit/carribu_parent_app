@@ -26,7 +26,13 @@
       ]
     },
     "plugins": [
-      "expo-location"
+      "expo-location",
+      ["expo-build-properties", {
+        "android": {
+          "enableProguardInReleaseBuilds": true,
+          "enableShrinkResourcesInReleaseBuilds": true
+        }
+      }]
     ],
     "owner": "firstbodis-organization",
     "extra": {
