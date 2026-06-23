@@ -10,7 +10,6 @@ const LoginScreen = () => {
       <TextInput style={{width:'100%',backgroundColor:'#f3f4f6',borderRadius:12,padding:14,fontSize:16,marginBottom:12,borderWidth:1,borderColor:'#e5e7eb',color:'#111827'}} placeholder="Email" placeholderTextColor="#9ca3af" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none"/>
       <TextInput style={{width:'100%',backgroundColor:'#f3f4f6',borderRadius:12,padding:14,fontSize:16,marginBottom:12,borderWidth:1,borderColor:'#e5e7eb',color:'#111827'}} placeholder="Password" placeholderTextColor="#9ca3af" value={password} onChangeText={setPassword} secureTextEntry/>
       <TouchableOpacity style={{width:'100%',backgroundColor:'#16a34a',borderRadius:12,padding:16,alignItems:'center',marginTop:8}} onPress={go} disabled={loading}>{loading?<ActivityIndicator color="#fff"/>:<Text style={{color:'#fff',fontSize:16,fontWeight:'600'}}>Sign In</Text>}</TouchableOpacity>
-      <View style={{marginTop:20,backgroundColor:'#f0fdf4',borderRadius:12,padding:12,width:'100%'}}><Text style={{fontSize:13,fontWeight:'600',color:'#15803d'}}>Demo: parent1@gmail.com / parent123</Text></View>
     </View>
   </KeyboardAvoidingView>;
 };

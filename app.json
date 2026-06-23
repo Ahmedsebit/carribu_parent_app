@@ -17,7 +17,7 @@
       "package": "com.carribu.parent",
       "config": {
         "googleMaps": {
-          "apiKey": ""
+          "apiKey": "AIzaSyBJmKq7c0Kh-CcseZYlBPLeqbfiqWZdYO4"
         }
       },
       "permissions": [
