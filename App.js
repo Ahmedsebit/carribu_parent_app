@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import LoginScreen from './src/screens/LoginScreen';
+import SetupAccountScreen from './src/screens/SetupAccountScreen';
 import ForceChangePasswordScreen from './src/screens/ForceChangePasswordScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import ChatScreen from './src/screens/ChatScreen';
@@ -31,7 +32,10 @@ const AppContent = () => {
   if(loading) return <View style={{flex:1,justifyContent:'center',alignItems:'center',backgroundColor:'#15803d'}}><ActivityIndicator size="large" color="#fff"/></View>;
   return <NavigationContainer><Stack.Navigator screenOptions={{headerShown:false}}>
     {!isAuthenticated
-      ? <Stack.Screen name="Login" component={LoginScreen}/>
+      ? <>
+          <Stack.Screen name="Login" component={LoginScreen}/>
+          <Stack.Screen name="Setup" component={SetupAccountScreen}/>
+        </>
       : requiresPasswordChange
         ? <Stack.Screen name="ForceChangePassword" component={ForceChangePasswordScreen}/>
         : <Stack.Screen name="Main" component={MainTabs}/>

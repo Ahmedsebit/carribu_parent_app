@@ -23,6 +23,19 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => { await AsyncStorage.removeItem('token'); await AsyncStorage.removeItem('user'); setUser(null); setPasswordChanged(false); };
   const updateUser = async (updatedUser) => { setUser(updatedUser); await AsyncStorage.setItem('user', JSON.stringify(updatedUser)); };
 
+  // A pending parent completes registration by setting their own password, then is logged in
+  const completeRegistration = async (phone, newPassword) => {
+    const { data } = await authAPI.completeRegistration({ phone, newPassword });
+    if (!['parent', 'admin'].includes(data.user.role)) throw new Error('This app is for parents only.');
+    await AsyncStorage.setItem('token', data.token);
+    await AsyncStorage.setItem('user', JSON.stringify(data.user));
+    const userId = data.user._id || data.user.id;
+    await AsyncStorage.setItem(`pw_changed_${userId}`, 'true');
+    setPasswordChanged(true);
+    setUser(data.user);
+    return data;
+  };
+
   const markPasswordChanged = async () => {
     const userId = user._id || user.id;
     await AsyncStorage.setItem(`pw_changed_${userId}`, 'true');
@@ -31,6 +44,6 @@ export const AuthProvider = ({ children }) => {
 
   const requiresPasswordChange = !!user && !passwordChanged;
 
-  return <AuthContext.Provider value={{user,login,logout,updateUser,markPasswordChanged,loading,isAuthenticated:!!user,requiresPasswordChange}}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{user,login,logout,updateUser,completeRegistration,markPasswordChanged,loading,isAuthenticated:!!user,requiresPasswordChange}}>{children}</AuthContext.Provider>;
 };
 export const useAuth = () => { const c = useContext(AuthContext); if(!c) throw new Error('useAuth must be within AuthProvider'); return c; };

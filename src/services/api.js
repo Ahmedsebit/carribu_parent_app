@@ -4,7 +4,7 @@ import { API_BASE_URL } from '@env';
 const API_BASE = API_BASE_URL || 'https://carribubackend-production.up.railway.app/api';
 const api = axios.create({ baseURL: API_BASE, headers:{'Content-Type':'application/json'}, timeout:10000 });
 api.interceptors.request.use(async config => { const t = await AsyncStorage.getItem('token'); if(t) config.headers.Authorization = `Bearer ${t}`; return config; });
-export const authAPI = { login: d => api.post('/auth/login', d), changePassword: d => api.put('/auth/change-password', d), updateProfile: d => api.put('/auth/profile', d), getMe: () => api.get('/auth/me') };
+export const authAPI = { login: d => api.post('/auth/login', d), changePassword: d => api.put('/auth/change-password', d), updateProfile: d => api.put('/auth/profile', d), getMe: () => api.get('/auth/me'), registrationStatus: d => api.post('/auth/registration-status', d), completeRegistration: d => api.post('/auth/complete-registration', d) };
 export const locationAPI = { getMyBus: () => api.get('/location/my-bus'), getBusLocation: id => api.get(`/location/bus/${id}`) };
 export const studentAPI = { getAll: () => api.get('/students') };
 export const messageAPI = { getConversations: () => api.get('/messages/conversations'), getThread: id => api.get(`/messages/thread/${id}`), send: d => api.post('/messages', d), getUnreadCount: () => api.get('/messages/unread-count'), reportAbsence: d => api.post('/messages/absence', d), getMyDrivers: () => api.get('/messages/my-drivers'), getNotifications: () => api.get('/messages/notifications') };
