@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshContr
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useIsFocused } from '@react-navigation/native';
 import { locationAPI } from '../services/api';
-import { connectSocket, trackTrip, onLocationUpdate, offLocationUpdate, onNotification, getSocket } from '../services/socket';
+import { connectSocket, trackTrip, getSocket } from '../services/socket';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -33,6 +33,11 @@ const TrackingScreen = () => {
 
   useEffect(() => { fetchData(); }, []);
 
+  // Keep a stable ref to fetchData so socket handlers always call the latest
+  // version without needing to re-register listeners.
+  const fetchDataRef = useRef(fetchData);
+  useEffect(() => { fetchDataRef.current = fetchData; }, [fetchData]);
+
   // Poll only when screen is focused (fallback for socket)
   useEffect(() => {
     if (!isFocused) return;
@@ -40,66 +45,60 @@ const TrackingScreen = () => {
     return () => clearInterval(interval);
   }, [isFocused, fetchData]);
 
-  // Socket.IO real-time tracking
+  // Socket.IO real-time tracking: connect once per focus and register the
+  // location + notification listeners. This effect intentionally does NOT
+  // depend on `buses` so listeners are not torn down/duplicated as buses
+  // change (which previously dropped notifications and live location).
   useEffect(() => {
-    let mounted = true;
+    if (!isFocused) return;
+    let active = true;
+
+    const handleLocation = (data) => {
+      const location = { lat: data.lat, lng: data.lng, speed: data.speed, heading: data.heading, updatedAt: new Date().toISOString() };
+      setBuses(prev => prev.map(bus => (bus.tripId === data.tripId ? { ...bus, location } : bus)));
+      setSelectedBus(prev => (prev && prev.tripId === data.tripId ? { ...prev, location } : prev));
+    };
+    const handleTripStarted = (d) => { Alert.alert('🚌 Trip Started!', d.message); fetchDataRef.current(); };
+    const handleApproaching = (d) => Alert.alert('🚌 Driver Approaching!', d.message);
+    const handleArrived = (d) => Alert.alert('📍 Driver Arrived!', d.message);
+    const handlePickedUp = (d) => { Alert.alert('✅ Picked Up!', d.message); fetchDataRef.current(); };
+    const handleTripStatus = (d) => {
+      if (d.status === 'completed') { Alert.alert('✅ Trip Complete', 'The trip has ended.'); fetchDataRef.current(); }
+    };
+
     const setupSocket = async () => {
       await connectSocket();
       const sock = getSocket();
-      if (!sock) return;
-
-      // Join trip rooms for all active buses
-      if (buses.length > 0) {
-        buses.forEach(bus => { if (bus.tripId) trackTrip(bus.tripId); });
-      }
-
-      // Listen for real-time location updates
-      const handleLocation = (data) => {
-        if (!mounted) return;
-        setBuses(prev => prev.map(bus => {
-          if (bus.tripId === data.tripId) {
-            return { ...bus, location: { lat: data.lat, lng: data.lng, speed: data.speed, heading: data.heading, updatedAt: new Date().toISOString() } };
-          }
-          return bus;
-        }));
-        setSelectedBus(prev => {
-          if (prev && prev.tripId === data.tripId) {
-            return { ...prev, location: { lat: data.lat, lng: data.lng, speed: data.speed, heading: data.heading, updatedAt: new Date().toISOString() } };
-          }
-          return prev;
-        });
-      };
-      onLocationUpdate(handleLocation);
-
-      // Listen for trip notifications
-      sock.on('trip-started', (data) => {
-        if (mounted) Alert.alert('🚌 Trip Started!', data.message);
-        fetchData();
-      });
-      sock.on('driver-approaching', (data) => {
-        if (mounted) Alert.alert('🚌 Driver Approaching!', data.message);
-      });
-      sock.on('driver-arrived', (data) => {
-        if (mounted) Alert.alert('📍 Driver Arrived!', data.message);
-      });
-      sock.on('student-picked-up', (data) => {
-        if (mounted) Alert.alert('✅ Picked Up!', data.message);
-        fetchData();
-      });
-      sock.on('trip-status', (data) => {
-        if (data.status === 'completed') {
-          if (mounted) Alert.alert('✅ Trip Complete', 'The trip has ended.');
-          fetchData();
-        }
-      });
+      if (!sock || !active) return;
+      sock.on('location-update', handleLocation);
+      sock.on('trip-started', handleTripStarted);
+      sock.on('driver-approaching', handleApproaching);
+      sock.on('driver-arrived', handleArrived);
+      sock.on('student-picked-up', handlePickedUp);
+      sock.on('trip-status', handleTripStatus);
     };
+    setupSocket();
 
-    if (isFocused) setupSocket();
     return () => {
-      mounted = false;
-      offLocationUpdate(() => {});
+      active = false;
+      const sock = getSocket();
+      if (sock) {
+        sock.off('location-update', handleLocation);
+        sock.off('trip-started', handleTripStarted);
+        sock.off('driver-approaching', handleApproaching);
+        sock.off('driver-arrived', handleArrived);
+        sock.off('student-picked-up', handlePickedUp);
+        sock.off('trip-status', handleTripStatus);
+      }
     };
-  }, [isFocused, buses.length]);
+  }, [isFocused]);
+
+  // Join (and re-join) trip rooms whenever the set of active buses changes.
+  // The socket service also re-joins these rooms automatically on reconnect.
+  useEffect(() => {
+    if (!isFocused) return;
+    buses.forEach(bus => { if (bus.tripId) trackTrip(bus.tripId); });
+  }, [isFocused, buses]);
 
   const openMap = (lat, lng) => {
     const url = Platform.OS === 'ios'

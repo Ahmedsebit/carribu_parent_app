@@ -4,6 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const API_BASE = 'http://10.0.2.2:5000';
 let socket = null;
 let listeners = [];
+// Trips the user is currently tracking. The server places the socket in the
+// `trip:<id>` room on `track-trip`, but that membership is lost whenever the
+// socket reconnects. We keep the set here so we can re-join on every connect.
+const trackedTrips = new Set();
 
 export const connectSocket = async () => {
   const token = await AsyncStorage.getItem('token');
@@ -18,7 +22,12 @@ export const connectSocket = async () => {
     reconnectionDelay: 2000,
   });
 
-  socket.on('connect', () => console.log('🔌 Socket connected'));
+  socket.on('connect', () => {
+    console.log('🔌 Socket connected');
+    // Re-join every tracked trip room after a (re)connect so location and
+    // trip-room events keep flowing after network blips or app backgrounding.
+    trackedTrips.forEach((tripId) => socket.emit('track-trip', tripId));
+  });
   socket.on('disconnect', () => console.log('🔌 Socket disconnected'));
   socket.on('connect_error', (err) => console.log('🔌 Socket error:', err.message));
 
@@ -29,10 +38,17 @@ export const getSocket = () => socket;
 
 export const disconnectSocket = () => {
   if (socket) { socket.disconnect(); socket = null; }
+  trackedTrips.clear();
 };
 
 export const trackTrip = (tripId) => {
-  if (socket) socket.emit('track-trip', tripId);
+  if (tripId == null) return;
+  trackedTrips.add(tripId);
+  if (socket?.connected) socket.emit('track-trip', tripId);
+};
+
+export const untrackTrip = (tripId) => {
+  trackedTrips.delete(tripId);
 };
 
 export const onLocationUpdate = (callback) => {

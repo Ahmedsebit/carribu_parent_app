@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { messageAPI } from '../services/api';
+import { connectSocket, getSocket } from '../services/socket';
 
 const NotificationsScreen = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const isFocused = useIsFocused();
 
   const fetch = useCallback(async () => {
     try {
@@ -16,6 +19,29 @@ const NotificationsScreen = () => {
   }, []);
 
   useEffect(() => { fetch(); }, [fetch]);
+
+  // Refresh whenever the screen regains focus so the list is never stale.
+  useEffect(() => { if (isFocused) fetch(); }, [isFocused, fetch]);
+
+  // Live-update: re-fetch the notifications list whenever a real-time
+  // notification arrives over the socket.
+  useEffect(() => {
+    let active = true;
+    const events = ['trip-started', 'driver-approaching', 'driver-arrived', 'student-picked-up', 'new-message'];
+    const handler = () => { if (active) fetch(); };
+    const setup = async () => {
+      await connectSocket();
+      const sock = getSocket();
+      if (!sock || !active) return;
+      events.forEach(e => sock.on(e, handler));
+    };
+    setup();
+    return () => {
+      active = false;
+      const sock = getSocket();
+      if (sock) events.forEach(e => sock.off(e, handler));
+    };
+  }, [fetch]);
 
   const getIcon = (type) => {
     switch (type) {
