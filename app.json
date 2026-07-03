@@ -1,11 +1,17 @@
 {
   "expo": {
-    "name": "SchoolTransport Parent",
+    "name": "Carribu Parent",
     "slug": "school-transport-parent",
     "version": "2.0.0",
     "sdkVersion": "55.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.carribu.parent",
@@ -15,6 +21,10 @@
     },
     "android": {
       "package": "com.carribu.parent",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBJmKq7c0Kh-CcseZYlBPLeqbfiqWZdYO4"
