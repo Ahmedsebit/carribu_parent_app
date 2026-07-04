@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Linking, Platform, Dimensions, StyleSheet, Alert } from 'react-native';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useIsFocused } from '@react-navigation/native';
 import { locationAPI } from '../services/api';
 import { connectSocket, trackTrip, getSocket } from '../services/socket';
@@ -169,6 +169,7 @@ const TrackingScreen = () => {
       <View style={{ flex: 1 }}>
         <MapView
           ref={mapRef}
+          provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={{ ...busCoord, latitudeDelta: 0.03, longitudeDelta: 0.03 }}
           onMapReady={() => fitMapToMarkers(bus)}
