@@ -37,6 +37,9 @@
     },
     "plugins": [
       "expo-location",
+      ["expo-notifications", {
+        "color": "#16a34a"
+      }],
       ["expo-build-properties", {
         "android": {
           "enableProguardInReleaseBuilds": true,
