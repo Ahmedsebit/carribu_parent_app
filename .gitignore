@@ -93,3 +93,5 @@ __tests__/coverage/
 *.orig
 .node_repl_history
 .tern-port
+
+fcm-service-account.json
