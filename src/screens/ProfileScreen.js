@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator, TextInput, ScrollView, Dimensions, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, TextInput, ScrollView, Dimensions, Linking, Platform } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 import Constants from 'expo-constants';
@@ -151,7 +151,7 @@ const ProfileScreen = () => {
       </View>}
     </View>
 
-    <TouchableOpacity style={{backgroundColor:'#dc2626',borderRadius:14,padding:16,alignItems:'center'}} onPress={()=>Alert.alert('Logout','Sure?',[{text:'Cancel',style:'cancel'},{text:'Logout',style:'destructive',onPress:logout}])}><Text style={{color:'#fff',fontSize:16,fontWeight:'600'}}>🚪 Logout</Text></TouchableOpacity>
+    <TouchableOpacity style={{backgroundColor:'#dc2626',borderRadius:14,padding:16,alignItems:'center'}} onPress={()=>{ if(Platform.OS==='web'){ if(window.confirm('Log out of Carribu?')) logout(); } else { Alert.alert('Logout','Sure?',[{text:'Cancel',style:'cancel'},{text:'Logout',style:'destructive',onPress:logout}]); } }}><Text style={{color:'#fff',fontSize:16,fontWeight:'600'}}>🚪 Logout</Text></TouchableOpacity>
 
     {/* App Version & Update */}
     <View style={{marginTop:16,alignItems:'center'}}>
