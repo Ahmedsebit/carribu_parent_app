@@ -9,11 +9,17 @@ import { studentAPI, authAPI, appVersionAPI } from '../services/api';
 const APP_VERSION = Constants.expoConfig?.version || '2.0.0';
 const { width } = Dimensions.get('window');
 
+// react-native-maps requires finite numeric coordinates on native.
+const toFiniteCoord = (lat, lng) => {
+  const la = Number(lat), ln = Number(lng);
+  return Number.isFinite(la) && Number.isFinite(ln) ? { latitude: la, longitude: ln } : null;
+};
+
 const ProfileScreen = () => {
   const {user,logout,updateUser}=useAuth(); const [children,setChildren]=useState([]); const [loading,setLoading]=useState(true);
   const [showPwForm,setShowPwForm]=useState(false); const [currentPw,setCurrentPw]=useState(''); const [newPw,setNewPw]=useState(''); const [confirmPw,setConfirmPw]=useState(''); const [pwLoading,setPwLoading]=useState(false);
   const [showLocationForm,setShowLocationForm]=useState(false); const [pickupAddress,setPickupAddress]=useState(user?.pickupAddress||'');
-  const [markerCoord,setMarkerCoord]=useState(user?.pickupLat ? {latitude:parseFloat(user.pickupLat),longitude:parseFloat(user.pickupLng)} : null);
+  const [markerCoord,setMarkerCoord]=useState(toFiniteCoord(user?.pickupLat, user?.pickupLng));
   const [locLoading,setLocLoading]=useState(false); const [mapReady,setMapReady]=useState(false);
   const [scrollEnabled,setScrollEnabled]=useState(true);
   const [latestVersion,setLatestVersion]=useState(null);

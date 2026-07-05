@@ -7,6 +7,11 @@ import { connectSocket, trackTrip, getSocket } from '../services/socket';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// react-native-maps requires numeric lat/lng on native; strings or NaN crash
+// the app. Coerce every coordinate before it reaches the map.
+const num = (v) => (v === null || v === undefined || v === '' ? NaN : Number(v));
+const isValidCoord = (lat, lng) => Number.isFinite(lat) && Number.isFinite(lng);
+
 const TrackingScreen = () => {
   const [buses, setBuses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +59,7 @@ const TrackingScreen = () => {
     let active = true;
 
     const handleLocation = (data) => {
-      const location = { lat: data.lat, lng: data.lng, speed: data.speed, heading: data.heading, updatedAt: new Date().toISOString() };
+      const location = { lat: num(data.lat), lng: num(data.lng), speed: data.speed, heading: data.heading, updatedAt: new Date().toISOString() };
       setBuses(prev => prev.map(bus => (bus.tripId === data.tripId ? { ...bus, location } : bus)));
       setSelectedBus(prev => (prev && prev.tripId === data.tripId ? { ...prev, location } : prev));
     };
@@ -112,9 +117,15 @@ const TrackingScreen = () => {
   const fitMapToMarkers = useCallback((bus) => {
     if (!mapRef.current || !bus) return;
     const coords = [];
-    if (bus.location) coords.push({ latitude: bus.location.lat, longitude: bus.location.lng });
+    if (bus.location) {
+      const lat = num(bus.location.lat), lng = num(bus.location.lng);
+      if (isValidCoord(lat, lng)) coords.push({ latitude: lat, longitude: lng });
+    }
     if (bus.pendingStops) {
-      bus.pendingStops.forEach(s => coords.push({ latitude: s.lat, longitude: s.lng }));
+      bus.pendingStops.forEach(s => {
+        const lat = num(s.lat), lng = num(s.lng);
+        if (isValidCoord(lat, lng)) coords.push({ latitude: lat, longitude: lng });
+      });
     }
     if (coords.length > 1) {
       mapRef.current.fitToCoordinates(coords, { edgePadding: { top: 80, right: 60, bottom: 260, left: 60 }, animated: true });
@@ -135,7 +146,9 @@ const TrackingScreen = () => {
   // Map View
   const renderMapView = () => {
     const bus = selectedBus || (buses.length > 0 ? buses[0] : null);
-    if (!bus || !bus.location) {
+    const busLat = bus && bus.location ? num(bus.location.lat) : NaN;
+    const busLng = bus && bus.location ? num(bus.location.lng) : NaN;
+    if (!bus || !bus.location || !isValidCoord(busLat, busLng)) {
       return (
         <View style={styles.noLocationContainer}>
           <Text style={{ fontSize: 56 }}>🚌</Text>
@@ -154,8 +167,10 @@ const TrackingScreen = () => {
       );
     }
 
-    const busCoord = { latitude: bus.location.lat, longitude: bus.location.lng };
-    const pendingStops = bus.pendingStops || [];
+    const busCoord = { latitude: busLat, longitude: busLng };
+    const pendingStops = (bus.pendingStops || [])
+      .map(s => ({ ...s, lat: num(s.lat), lng: num(s.lng) }))
+      .filter(s => isValidCoord(s.lat, s.lng));
     const myStops = pendingStops.filter(s => s.isMyChild);
     const otherStops = pendingStops.filter(s => !s.isMyChild);
 
@@ -364,8 +379,8 @@ const TrackingScreen = () => {
             <View style={{ backgroundColor: '#f0fdf4', borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#bbf7d0' }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: '#15803d' }}>📍 Current Location</Text>
-                <Text style={{ fontSize: 13, color: '#374151', marginTop: 2 }}>Lat: {item.location.lat.toFixed(5)}, Lng: {item.location.lng.toFixed(5)}</Text>
-                {item.location.speed && <Text style={{ fontSize: 12, color: '#16a34a', marginTop: 2 }}>Speed: {item.location.speed.toFixed(1)} km/h</Text>}
+                <Text style={{ fontSize: 13, color: '#374151', marginTop: 2 }}>Lat: {isValidCoord(num(item.location.lat), num(item.location.lng)) ? `${num(item.location.lat).toFixed(5)}, Lng: ${num(item.location.lng).toFixed(5)}` : 'unavailable'}</Text>
+                {Number.isFinite(num(item.location.speed)) && <Text style={{ fontSize: 12, color: '#16a34a', marginTop: 2 }}>Speed: {num(item.location.speed).toFixed(1)} km/h</Text>}
                 <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Updated: {new Date(item.location.recordedAt).toLocaleTimeString()}</Text>
               </View>
               <TouchableOpacity style={{ backgroundColor: '#2563eb', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }} onPress={() => openMap(item.location.lat, item.location.lng)}>
