@@ -6,6 +6,7 @@ const api = axios.create({ baseURL: API_BASE, headers:{'Content-Type':'applicati
 api.interceptors.request.use(async config => { const t = await AsyncStorage.getItem('token'); if(t) config.headers.Authorization = `Bearer ${t}`; return config; });
 export const authAPI = { login: d => api.post('/auth/login', d), changePassword: d => api.put('/auth/change-password', d), updateProfile: d => api.put('/auth/profile', d), getMe: () => api.get('/auth/me'), registrationStatus: d => api.post('/auth/registration-status', d), completeRegistration: d => api.post('/auth/complete-registration', d), savePushToken: token => api.put('/auth/push-token', { pushToken: token }) };
 export const locationAPI = { getMyBus: () => api.get('/location/my-bus'), getBusLocation: id => api.get(`/location/bus/${id}`) };
+export const tripAPI = { getHistory: (days = 30) => api.get('/parent/trip-history', { params: { days } }) };
 export const studentAPI = { getAll: () => api.get('/students') };
 export const messageAPI = { getConversations: () => api.get('/messages/conversations'), getThread: id => api.get(`/messages/thread/${id}`), send: d => api.post('/messages', d), getUnreadCount: () => api.get('/messages/unread-count'), reportAbsence: d => api.post('/messages/absence', d), getMyDrivers: () => api.get('/messages/my-drivers'), getNotifications: () => api.get('/messages/notifications') };
 export const appVersionAPI = { getLatest: (appName) => api.get(`/app-versions/latest/${appName}`) };
