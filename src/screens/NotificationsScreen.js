@@ -27,7 +27,7 @@ const NotificationsScreen = () => {
   // notification arrives over the socket.
   useEffect(() => {
     let active = true;
-    const events = ['trip-started', 'driver-approaching', 'driver-arrived', 'student-picked-up', 'new-message'];
+    const events = ['trip-started', 'driver-approaching', 'driver-arrived', 'student-picked-up', 'school-notification', 'new-message'];
     const handler = () => { if (active) fetch(); };
     const setup = async () => {
       await connectSocket();
