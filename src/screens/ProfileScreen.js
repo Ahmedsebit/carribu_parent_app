@@ -78,7 +78,7 @@ const ProfileScreen = () => {
       <View style={{width:72,height:72,borderRadius:36,backgroundColor:'#16a34a',justifyContent:'center',alignItems:'center',marginBottom:12}}><Text style={{color:'#fff',fontSize:26,fontWeight:'700'}}>{user?.firstName?.[0]}{user?.lastName?.[0]}</Text></View>
       <Text style={{color:'#fff',fontSize:20,fontWeight:'700'}}>{user?.firstName} {user?.lastName}</Text>
       <Text style={{color:'#bbf7d0',fontSize:13,fontWeight:'600',marginTop:4}}>PARENT</Text>
-      <Text style={{color:'#dcfce7',fontSize:13,marginTop:2}}>{user?.school?.name||'School'}</Text>
+      <Text style={{color:'#dcfce7',fontSize:13,marginTop:2}}>{user?.parentSchools?.map(s=>s.name).join(' • ')||user?.school?.name||'School'}</Text>
     </View>
     <View style={{backgroundColor:'#fff',borderRadius:14,marginBottom:16}}>
       {[['📧 Email',user?.email],['📞 Phone',user?.phone||'Not set'],['📍 Pickup',user?.pickupAddress||'Not set']].map(([l,v])=><View key={l} style={{flexDirection:'row',justifyContent:'space-between',padding:16,borderBottomWidth:1,borderBottomColor:'#f3f4f6'}}><Text style={{color:'#6b7280'}}>{l}</Text><Text style={{fontWeight:'500',flex:1,textAlign:'right'}} numberOfLines={1}>{v}</Text></View>)}
@@ -137,7 +137,7 @@ const ProfileScreen = () => {
       {loading?<ActivityIndicator color="#16a34a"/>:children.length===0?<Text style={{color:'#9ca3af'}}>No children linked.</Text>:children.map(c=>
         <View key={c.id} style={{flexDirection:'row',alignItems:'center',gap:12,paddingVertical:10,borderBottomWidth:1,borderBottomColor:'#f3f4f6'}}>
           <View style={{width:40,height:40,borderRadius:20,backgroundColor:'#dcfce7',justifyContent:'center',alignItems:'center'}}><Text style={{color:'#16a34a',fontWeight:'700',fontSize:16}}>{c.firstName[0]}</Text></View>
-          <View><Text style={{fontSize:15,fontWeight:'600'}}>{c.firstName} {c.lastName}</Text><Text style={{fontSize:12,color:'#6b7280'}}>{c.grade||'N/A'}</Text><Text style={{fontSize:12,color:'#16a34a',marginTop:2}}>Routes: {c.routes?.length>0?c.routes.map(r=>r.name).join(', '):'Unassigned'}</Text></View>
+          <View><Text style={{fontSize:15,fontWeight:'600'}}>{c.firstName} {c.lastName}</Text><Text style={{fontSize:12,color:'#6b7280'}}>{c.grade||'N/A'}{c.school?.name?` • ${c.school.name}`:''}</Text><Text style={{fontSize:12,color:'#16a34a',marginTop:2}}>Routes: {c.routes?.length>0?c.routes.map(r=>r.name).join(', '):'Unassigned'}</Text></View>
         </View>)}
     </View>
 
