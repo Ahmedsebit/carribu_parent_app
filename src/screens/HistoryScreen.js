@@ -74,6 +74,7 @@ const HistoryScreen = () => {
                 <Text style={{ fontSize: 16, fontWeight: '700' }}>{item.route?.name || 'Route'}</Text>
                 <Text style={{ fontSize: 13, color: '#6b7280' }}>{item.type === 'morning_pickup' ? '🌅 Morning' : '🌇 Afternoon'}</Text>
               </View>
+              {item.school?.name ? <Text style={{ fontSize: 12, color: '#15803d', fontWeight: '600', marginTop: 3 }}>🏫 {item.school.name}</Text> : null}
               <Text style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
                 📅 {fmtDate(item.scheduledDate)} • 🕐 {fmtTime(item.startedAt)}–{fmtTime(item.endedAt)}
               </Text>
