@@ -22,15 +22,21 @@ const statusMeta = {
 };
 
 const HistoryScreen = () => {
+  const [tab, setTab] = useState('upcoming'); // 'upcoming' | 'past'
   const [trips, setTrips] = useState([]);
+  const [upcomingTrips, setUpcomingTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      const { data } = await tripAPI.getHistory(30);
-      setTrips(data.trips || []);
+      const [historyRes, upcomingRes] = await Promise.all([
+        tripAPI.getHistory(30),
+        tripAPI.getUpcoming(7),
+      ]);
+      setTrips(historyRes.data.trips || []);
+      setUpcomingTrips(upcomingRes.data.trips || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -48,6 +54,75 @@ const HistoryScreen = () => {
       </View>
     );
 
+  const TabButton = ({ id, label }) => (
+    <TouchableOpacity
+      onPress={() => setTab(id)}
+      style={{
+        flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
+        backgroundColor: tab === id ? '#16a34a' : 'transparent',
+      }}
+    >
+      <Text style={{ fontWeight: '700', color: tab === id ? '#fff' : '#374151' }}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  const tripStatusMeta = {
+    scheduled: { label: 'Scheduled', color: '#2563eb', icon: '📅' },
+    delayed: { label: 'Delayed', color: '#d97706', icon: '⚠️' },
+  };
+
+  if (tab === 'upcoming') {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#f3f4f6' }}>
+        <FlatList
+          data={upcomingTrips}
+          keyExtractor={(i) => String(i.id)}
+          contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+          ListHeaderComponent={
+            <View style={{ marginBottom: 16 }}>
+              <Text style={{ fontSize: 22, fontWeight: '700' }}>🚌 Upcoming Trips</Text>
+              <Text style={{ fontSize: 13, color: '#6b7280' }}>Scheduled trips • next 7 days</Text>
+              <View style={{ flexDirection: 'row', backgroundColor: '#e5e7eb', borderRadius: 12, padding: 4, marginTop: 12 }}>
+                <TabButton id="upcoming" label="Upcoming" />
+                <TabButton id="past" label="History" />
+              </View>
+            </View>
+          }
+          renderItem={({ item }) => {
+            const m = tripStatusMeta[item.status] || tripStatusMeta.scheduled;
+            return (
+              <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 16, fontWeight: '700' }}>{item.route?.name || 'Route'}</Text>
+                  <Text style={{ fontSize: 12, color: m.color, fontWeight: '700' }}>{m.icon} {m.label}</Text>
+                </View>
+                {item.school?.name ? <Text style={{ fontSize: 12, color: '#15803d', fontWeight: '600', marginTop: 3 }}>🏫 {item.school.name}</Text> : null}
+                <Text style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
+                  {item.type === 'morning_pickup' ? '🌅 Morning' : '🌇 Afternoon'} • 📅 {fmtDate(item.scheduledDate)}{item.scheduledTime ? ` • 🕐 ${item.scheduledTime.slice(0, 5)}` : ''}
+                </Text>
+                <Text style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>
+                  👤 {item.driver?.name || 'Driver TBD'} • 🚐 {item.vehicle?.plateNumber || '—'}
+                </Text>
+                {(item.children || []).length > 0 && (
+                  <Text style={{ fontSize: 12, color: '#374151', marginTop: 6 }}>
+                    👦 {(item.children || []).map((c) => c.studentName).join(', ')}
+                  </Text>
+                )}
+              </View>
+            );
+          }}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', paddingTop: 60 }}>
+              <Text style={{ fontSize: 48 }}>🚌</Text>
+              <Text style={{ color: '#9ca3af', marginTop: 12 }}>No upcoming trips scheduled.</Text>
+            </View>
+          }
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: '#f3f4f6' }}>
       <FlatList
@@ -59,6 +134,10 @@ const HistoryScreen = () => {
           <View style={{ marginBottom: 16 }}>
             <Text style={{ fontSize: 22, fontWeight: '700' }}>🕘 Trip History</Text>
             <Text style={{ fontSize: 13, color: '#6b7280' }}>Past trips • last 30 days</Text>
+            <View style={{ flexDirection: 'row', backgroundColor: '#e5e7eb', borderRadius: 12, padding: 4, marginTop: 12 }}>
+              <TabButton id="upcoming" label="Upcoming" />
+              <TabButton id="past" label="History" />
+            </View>
           </View>
         }
         renderItem={({ item }) => {
