@@ -24,7 +24,7 @@ const LazyHistory = (props) => <Suspense fallback={<LoadingFallback/>}><HistoryS
 const MainTabs = () => (
   <Tab.Navigator screenOptions={({route})=>({tabBarIcon:()=><Text style={{fontSize:22}}>{icons[route.name]}</Text>,tabBarActiveTintColor:'#16a34a',tabBarInactiveTintColor:'#9ca3af',tabBarStyle:{height:64,paddingBottom:8,paddingTop:4},tabBarLabelStyle:{fontSize:12,fontWeight:'600'},headerStyle:{backgroundColor:'#15803d'},headerTintColor:'#fff'})}>
     <Tab.Screen name="Track" component={LazyTracking} options={{headerTitle:'Bus Tracking'}}/>
-    <Tab.Screen name="History" component={LazyHistory} options={{headerTitle:'Trip History'}}/>
+    <Tab.Screen name="History" component={LazyHistory} options={{headerTitle:'Trips'}}/>
     <Tab.Screen name="Alerts" component={NotificationsScreen} options={{headerTitle:'Notifications'}}/>
     <Tab.Screen name="Chat" component={ChatScreen} options={{headerTitle:'Messages'}}/>
     <Tab.Screen name="Profile" component={LazyProfile} options={{headerTitle:'My Profile'}}/>
