@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { messageAPI } from '../services/api';
 import { connectSocket, getSocket } from '../services/socket';
@@ -62,6 +62,30 @@ const NotificationsScreen = () => {
     return `${Math.floor(hrs / 24)}d ago`;
   };
 
+  const deleteNotification = item => Alert.alert('Delete notification?', 'This removes it from your account.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Delete', style: 'destructive', onPress: async () => {
+      try {
+        await messageAPI.deleteNotification(item.id);
+        setNotifications(current => current.filter(notification => notification.id !== item.id));
+      } catch (e) {
+        Alert.alert('Error', e.response?.data?.error || 'Failed to delete notification.');
+      }
+    } },
+  ]);
+
+  const clearNotifications = () => Alert.alert('Clear all notifications?', 'This cannot be undone.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Clear all', style: 'destructive', onPress: async () => {
+      try {
+        await messageAPI.clearNotifications();
+        setNotifications([]);
+      } catch (e) {
+        Alert.alert('Error', e.response?.data?.error || 'Failed to clear notifications.');
+      }
+    } },
+  ]);
+
   if (loading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#16a34a" /></View>;
 
   return (
@@ -72,7 +96,10 @@ const NotificationsScreen = () => {
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetch(); }} tintColor="#16a34a" />}
         ListHeaderComponent={
-          <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 16 }}>🔔 Notifications</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={{ fontSize: 22, fontWeight: '700' }}>🔔 Notifications</Text>
+            {notifications.length > 0 && <TouchableOpacity onPress={clearNotifications}><Text style={{ color: '#dc2626', fontWeight: '600' }}>Clear all</Text></TouchableOpacity>}
+          </View>
         }
         renderItem={({ item }) => (
           <View style={{
@@ -83,7 +110,10 @@ const NotificationsScreen = () => {
               <Text style={{ fontSize: 24 }}>{getIcon(item.messageType)}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 14, color: '#111827', lineHeight: 20 }}>{item.content}</Text>
-                <Text style={{ fontSize: 12, color: '#9ca3af', marginTop: 6 }}>{getTimeAgo(item.createdAt)}</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                  <Text style={{ fontSize: 12, color: '#9ca3af' }}>{getTimeAgo(item.createdAt)}</Text>
+                  <TouchableOpacity onPress={() => deleteNotification(item)}><Text style={{ fontSize: 16 }}>🗑️</Text></TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>

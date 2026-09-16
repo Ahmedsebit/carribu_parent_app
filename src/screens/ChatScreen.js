@@ -10,6 +10,28 @@ const ChatScreen = () => {
   useEffect(()=>{fetchConvos();},[fetchConvos]);
   const openThread = async p => {setPartner(p);setView('thread');try{const{data}=await messageAPI.getThread(p.partnerId);setMsgs(data.messages);setTimeout(()=>ref.current?.scrollToEnd({animated:true}),300);}catch(e){}};
   const send = async () => {if(!text.trim()||!partner)return;setSending(true);try{const{data}=await messageAPI.send({receiverId:partner.partnerId,content:text.trim()});setMsgs(p=>[...p,data.message]);sendChatMessage(null, partner.partnerId, text.trim());setText('');setTimeout(()=>ref.current?.scrollToEnd({animated:true}),200);}catch(e){}finally{setSending(false);};};
+  const deleteMessage = item => Alert.alert('Remove message?', 'This only removes the message from your account.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Remove', style: 'destructive', onPress: async () => {
+      try {
+        await messageAPI.deleteMessage(item.id);
+        setMsgs(current => current.filter(message => message.id !== item.id));
+      } catch (e) {
+        Alert.alert('Error', e.response?.data?.error || 'Failed to remove message.');
+      }
+    } },
+  ]);
+  const clearConversation = () => Alert.alert('Clear conversation?', 'The other participant will still keep their copy.', [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Clear', style: 'destructive', onPress: async () => {
+      try {
+        await messageAPI.clearThread(partner.partnerId);
+        setMsgs([]);
+      } catch (e) {
+        Alert.alert('Error', e.response?.data?.error || 'Failed to clear conversation.');
+      }
+    } },
+  ]);
   const toggleChildSelection = childId => {
     setAbsData(prev => {
       const exists = prev.studentIds.includes(childId);
@@ -67,9 +89,9 @@ const ChatScreen = () => {
     </View>
   </View>;
   if(view==='thread'&&partner) return <KeyboardAvoidingView style={{flex:1,backgroundColor:'#f0fdf4'}} behavior={Platform.OS==='ios'?'padding':undefined}>
-    <View style={{backgroundColor:'#15803d',flexDirection:'row',alignItems:'center',padding:16,gap:12}}><TouchableOpacity onPress={()=>{setView('list');fetchConvos();}}><Text style={{color:'#bbf7d0',fontWeight:'600'}}>← Back</Text></TouchableOpacity><View><Text style={{color:'#fff',fontSize:16,fontWeight:'600'}}>{partner.partnerName}</Text><Text style={{color:'#bbf7d0',fontSize:12,textTransform:'capitalize'}}>{partner.partnerRole}</Text></View></View>
+    <View style={{backgroundColor:'#15803d',flexDirection:'row',alignItems:'center',padding:16,gap:12}}><TouchableOpacity onPress={()=>{setView('list');fetchConvos();}}><Text style={{color:'#bbf7d0',fontWeight:'600'}}>← Back</Text></TouchableOpacity><View style={{flex:1}}><Text style={{color:'#fff',fontSize:16,fontWeight:'600'}}>{partner.partnerName}</Text><Text style={{color:'#bbf7d0',fontSize:12,textTransform:'capitalize'}}>{partner.partnerRole}</Text></View><TouchableOpacity onPress={clearConversation}><Text style={{color:'#fff',fontWeight:'600'}}>Clear</Text></TouchableOpacity></View>
     <FlatList ref={ref} data={msgs} keyExtractor={i=>String(i.id)} contentContainerStyle={{padding:16}} onContentSizeChange={()=>ref.current?.scrollToEnd({animated:false})}
-      renderItem={({item})=>{const mine=item.senderId===user.id;return <View style={{maxWidth:'80%',borderRadius:16,padding:12,marginBottom:8,backgroundColor:mine?'#16a34a':'#fff',alignSelf:mine?'flex-end':'flex-start'}}><Text style={{fontSize:14,color:mine?'#fff':'#111827'}}>{item.content}</Text><Text style={{fontSize:10,marginTop:4,color:mine?'#bbf7d0':'#9ca3af'}}>{new Date(item.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</Text></View>;}}
+      renderItem={({item})=>{const mine=item.senderId===user.id;return <TouchableOpacity onLongPress={()=>deleteMessage(item)} style={{maxWidth:'80%',borderRadius:16,padding:12,marginBottom:8,backgroundColor:mine?'#16a34a':'#fff',alignSelf:mine?'flex-end':'flex-start'}}><Text style={{fontSize:14,color:mine?'#fff':'#111827'}}>{item.content}</Text><View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12}}><Text style={{fontSize:10,marginTop:4,color:mine?'#bbf7d0':'#9ca3af'}}>{new Date(item.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</Text><TouchableOpacity onPress={()=>deleteMessage(item)}><Text style={{fontSize:13,color:mine?'#bbf7d0':'#9ca3af'}}>🗑️</Text></TouchableOpacity></View></TouchableOpacity>;}}
       ListEmptyComponent={<View style={{alignItems:'center',paddingTop:60}}><Text style={{fontSize:40}}>💬</Text><Text style={{color:'#9ca3af'}}>No messages yet</Text></View>}/>
     <View style={{flexDirection:'row',alignItems:'flex-end',padding:12,backgroundColor:'#fff',borderTopWidth:1,borderTopColor:'#e5e7eb',gap:8}}>
       <TextInput style={{flex:1,backgroundColor:'#f3f4f6',borderRadius:20,paddingHorizontal:16,paddingVertical:10,fontSize:14,maxHeight:100,color:'#111827'}} value={text} onChangeText={setText} placeholder="Message..." placeholderTextColor="#9ca3af" multiline/>
