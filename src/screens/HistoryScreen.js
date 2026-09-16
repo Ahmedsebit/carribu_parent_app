@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import { tripAPI } from '../services/api';
 
 const fmtDate = (d) => {
@@ -28,24 +28,54 @@ const HistoryScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState(null);
+  const [schoolId, setSchoolId] = useState('all');
+  const [studentId, setStudentId] = useState('all');
+  const [schools, setSchools] = useState([]);
+  const [students, setStudents] = useState([]);
 
   const load = useCallback(async () => {
     try {
+      const filters = {};
+      if (schoolId !== 'all') filters.schoolId = schoolId;
+      if (studentId !== 'all') filters.studentId = studentId;
       const [historyRes, upcomingRes] = await Promise.all([
-        tripAPI.getHistory(30),
-        tripAPI.getUpcoming(7),
+        tripAPI.getHistory(30, filters),
+        tripAPI.getUpcoming(7, filters),
       ]);
       setTrips(historyRes.data.trips || []);
       setUpcomingTrips(upcomingRes.data.trips || []);
+      const filterOptions = historyRes.data.filters || upcomingRes.data.filters || {};
+      setSchools(filterOptions.schools || []);
+      setStudents(filterOptions.students || []);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [schoolId, studentId]);
 
   useEffect(() => { load(); }, [load]);
+
+  const visibleStudents = useMemo(
+    () => schoolId === 'all'
+      ? students
+      : students.filter(student => String(student.schoolId) === schoolId),
+    [schoolId, students]
+  );
+
+  const selectSchool = (value) => {
+    setSchoolId(value);
+    if (
+      studentId !== 'all' &&
+      value !== 'all' &&
+      !students.some(student =>
+        String(student.id) === studentId && String(student.schoolId) === value
+      )
+    ) {
+      setStudentId('all');
+    }
+  };
 
   if (loading)
     return (
@@ -64,6 +94,52 @@ const HistoryScreen = () => {
     >
       <Text style={{ fontWeight: '700', color: tab === id ? '#fff' : '#374151' }}>{label}</Text>
     </TouchableOpacity>
+  );
+
+  const FilterChip = ({ selected, label, onPress }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 18,
+        marginRight: 8,
+        backgroundColor: selected ? '#15803d' : '#fff',
+        borderWidth: 1,
+        borderColor: selected ? '#15803d' : '#d1d5db',
+      }}
+    >
+      <Text style={{ color: selected ? '#fff' : '#374151', fontSize: 12, fontWeight: '600' }}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  const Filters = () => (
+    <View style={{ marginTop: 14 }}>
+      <Text style={{ fontSize: 12, color: '#6b7280', fontWeight: '700', marginBottom: 6 }}>School</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <FilterChip selected={schoolId === 'all'} label="All schools" onPress={() => selectSchool('all')} />
+        {schools.map(school => (
+          <FilterChip
+            key={school.id}
+            selected={schoolId === String(school.id)}
+            label={school.name}
+            onPress={() => selectSchool(String(school.id))}
+          />
+        ))}
+      </ScrollView>
+      <Text style={{ fontSize: 12, color: '#6b7280', fontWeight: '700', marginTop: 12, marginBottom: 6 }}>Student</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <FilterChip selected={studentId === 'all'} label="All children" onPress={() => setStudentId('all')} />
+        {visibleStudents.map(student => (
+          <FilterChip
+            key={student.id}
+            selected={studentId === String(student.id)}
+            label={`${student.firstName} ${student.lastName}`}
+            onPress={() => setStudentId(String(student.id))}
+          />
+        ))}
+      </ScrollView>
+    </View>
   );
 
   const tripStatusMeta = {
@@ -87,6 +163,7 @@ const HistoryScreen = () => {
                 <TabButton id="upcoming" label="Upcoming" />
                 <TabButton id="past" label="History" />
               </View>
+              <Filters />
             </View>
           }
           renderItem={({ item }) => {
@@ -138,6 +215,7 @@ const HistoryScreen = () => {
               <TabButton id="upcoming" label="Upcoming" />
               <TabButton id="past" label="History" />
             </View>
+            <Filters />
           </View>
         }
         renderItem={({ item }) => {
