@@ -18,8 +18,8 @@ const toFiniteCoord = (lat, lng) => {
 const ProfileScreen = () => {
   const {user,logout,updateUser}=useAuth(); const [children,setChildren]=useState([]); const [loading,setLoading]=useState(true);
   const [showPwForm,setShowPwForm]=useState(false); const [currentPw,setCurrentPw]=useState(''); const [newPw,setNewPw]=useState(''); const [confirmPw,setConfirmPw]=useState(''); const [pwLoading,setPwLoading]=useState(false);
-  const [showLocationForm,setShowLocationForm]=useState(false); const [pickupAddress,setPickupAddress]=useState(user?.pickupAddress||'');
-  const [markerCoord,setMarkerCoord]=useState(toFiniteCoord(user?.pickupLat, user?.pickupLng));
+  const [showLocationForm,setShowLocationForm]=useState(false); const [pickupAddress,setPickupAddress]=useState(user?.pendingPickupAddress||user?.pickupAddress||'');
+  const [markerCoord,setMarkerCoord]=useState(toFiniteCoord(user?.pendingPickupLat ?? user?.pickupLat, user?.pendingPickupLng ?? user?.pickupLng));
   const [locLoading,setLocLoading]=useState(false); const [mapReady,setMapReady]=useState(false);
   const [scrollEnabled,setScrollEnabled]=useState(true);
   const [latestVersion,setLatestVersion]=useState(null);
@@ -28,6 +28,14 @@ const ProfileScreen = () => {
   useEffect(()=>{(async()=>{try{const{data}=await studentAPI.getAll();setChildren(data.students.filter(s=>s.parentId===user.id));}catch(e){}finally{setLoading(false);}})();},[user]);
 
   useEffect(()=>{(async()=>{try{const{data}=await appVersionAPI.getLatest('parent');setLatestVersion(data);}catch(e){}})();},[]);
+  useEffect(()=>{(async()=>{try{const{data}=await authAPI.getMe();if(updateUser)await updateUser(data.user);}catch(e){}})();},[]);
+  useEffect(() => {
+    setPickupAddress(user?.pendingPickupAddress || user?.pickupAddress || '');
+    setMarkerCoord(toFiniteCoord(
+      user?.pendingPickupLat ?? user?.pickupLat,
+      user?.pendingPickupLng ?? user?.pickupLng
+    ));
+  }, [user?.pendingPickupAddress, user?.pendingPickupLat, user?.pendingPickupLng, user?.pickupAddress, user?.pickupLat, user?.pickupLng]);
 
   const openLocationForm = async () => {
     setShowLocationForm(true);
@@ -67,7 +75,7 @@ const ProfileScreen = () => {
       const payload = { pickupAddress: pickupAddress.trim(), pickupLat: markerCoord.latitude, pickupLng: markerCoord.longitude };
       const { data } = await authAPI.updateProfile(payload);
       if (updateUser) updateUser(data.user);
-      Alert.alert('Success','Pickup location updated!');
+      Alert.alert('Submitted','Your pickup location is pending school approval. Your current approved location will remain active until then.');
       setShowLocationForm(false);
     } catch (e) { Alert.alert('Error', e.response?.data?.error || 'Failed to update location.'); }
     finally { setLocLoading(false); }
@@ -91,6 +99,13 @@ const ProfileScreen = () => {
         <Text style={{color:'#16a34a',fontSize:14}}>{showLocationForm?'Cancel':'Edit'}</Text>
       </TouchableOpacity>
       {!showLocationForm && user?.pickupAddress ? <Text style={{color:'#6b7280',marginTop:8}}>{user.pickupAddress}</Text> : null}
+      {!showLocationForm && user?.pendingPickupRequestedAt ? (
+        <View style={{backgroundColor:'#fffbeb',borderColor:'#fde68a',borderWidth:1,borderRadius:10,padding:12,marginTop:12}}>
+          <Text style={{color:'#92400e',fontWeight:'700'}}>Pending school approval</Text>
+          <Text style={{color:'#78350f',marginTop:4}}>{user.pendingPickupAddress}</Text>
+          <Text style={{color:'#a16207',fontSize:12,marginTop:3}}>Your approved pickup location remains active until the school confirms this change.</Text>
+        </View>
+      ) : null}
       {showLocationForm && <View style={{marginTop:16}}>
         <Text style={{fontSize:13,color:'#6b7280',marginBottom:10}}>Drag the pin to your pickup location. Your current location is shown initially.</Text>
         {markerCoord ? (
@@ -126,7 +141,7 @@ const ProfileScreen = () => {
         ) : <ActivityIndicator color="#16a34a" style={{marginVertical:20}}/>}
         <TextInput placeholder="Pickup Address (e.g. Westlands, Nairobi)" value={pickupAddress} onChangeText={setPickupAddress} style={{borderWidth:1,borderColor:'#e5e7eb',borderRadius:10,padding:12,marginBottom:14,fontSize:15}}/>
         <TouchableOpacity onPress={saveLocation} disabled={locLoading} style={{backgroundColor:'#16a34a',borderRadius:10,padding:14,alignItems:'center'}}>
-          {locLoading?<ActivityIndicator color="#fff"/>:<Text style={{color:'#fff',fontWeight:'600',fontSize:15}}>Save Pickup Location</Text>}
+          {locLoading?<ActivityIndicator color="#fff"/>:<Text style={{color:'#fff',fontWeight:'600',fontSize:15}}>Submit for Approval</Text>}
         </TouchableOpacity>
       </View>}
     </View>
