@@ -59,7 +59,13 @@ const TrackingScreen = () => {
     let active = true;
 
     const handleLocation = (data) => {
-      const location = { lat: num(data.lat), lng: num(data.lng), speed: data.speed, heading: data.heading, updatedAt: new Date().toISOString() };
+      const location = {
+        lat: num(data.lat),
+        lng: num(data.lng),
+        speed: data.speed,
+        heading: data.heading,
+        recordedAt: data.recordedAt || data.timestamp || new Date().toISOString(),
+      };
       setBuses(prev => prev.map(bus => (bus.tripId === data.tripId ? { ...bus, location } : bus)));
       setSelectedBus(prev => (prev && prev.tripId === data.tripId ? { ...prev, location } : prev));
     };
@@ -134,6 +140,17 @@ const TrackingScreen = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!isFocused || viewMode !== 'map' || !mapRef.current || !selectedBus?.location) return;
+    const latitude = num(selectedBus.location.lat);
+    const longitude = num(selectedBus.location.lng);
+    if (!isValidCoord(latitude, longitude)) return;
+    mapRef.current.animateCamera(
+      { center: { latitude, longitude } },
+      { duration: 500 }
+    );
+  }, [isFocused, viewMode, selectedBus?.location?.lat, selectedBus?.location?.lng]);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -184,7 +201,7 @@ const TrackingScreen = () => {
       <View style={{ flex: 1 }}>
         <MapView
           ref={mapRef}
-          provider={PROVIDER_GOOGLE}
+          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
           style={styles.map}
           initialRegion={{ ...busCoord, latitudeDelta: 0.03, longitudeDelta: 0.03 }}
           onMapReady={() => fitMapToMarkers(bus)}
